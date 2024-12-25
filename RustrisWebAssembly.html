@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tetris (Rust)</title>
+</head>
+<body>
+  <canvas id="tetris-canvas" width="300" height="600"></canvas>
+  <script type="module">
+    import init, { Tetris } from './pkg/Rustris.js';
+
+    async function main() {
+      await init();
+
+      // Set up the Tetris game
+      const tetris = new Tetris("tetris-canvas");
+      tetris.start_game()
+    }
+
+    main();
+  </script>
+</body>
+</html>
