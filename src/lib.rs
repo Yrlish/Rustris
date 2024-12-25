@@ -1,27 +1,23 @@
-mod shape;
-mod piece;
 mod board;
+mod piece;
+mod shape;
 
-use crate::shape::Shape;
+use crate::board::Board;
+use crate::piece::Direction::{Down, Left, Right};
+use crate::piece::Piece;
 use rand::seq::SliceRandom;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{
-    CanvasRenderingContext2d, Document, HtmlCanvasElement, KeyboardEvent, Window,
-};
-use crate::board::Board;
-use crate::piece::Direction::{Down, Left, Right};
-use crate::piece::Piece;
+use web_sys::{CanvasRenderingContext2d, Document, HtmlCanvasElement, KeyboardEvent, Window};
 
 #[wasm_bindgen]
 pub struct Tetris {
     board: Board,
     ctx: CanvasRenderingContext2d,
     current_piece: Piece,
-    shapes: Vec<Shape>,
 }
 
 #[wasm_bindgen]
@@ -43,15 +39,14 @@ impl Tetris {
         let board = Board {
             width: 10,
             height: 20,
-            grid: vec![vec![0; 10]; 20]
+            grid: vec![vec![0; 10]; 20],
         };
 
-        let shapes = shape::get_tetris_shapes();
-        let current_shape = shapes.first().expect("No shapes").clone();
+        let current_shape = shape::get_random_shape();
         let current_piece = Piece {
-            shape: current_shape.clone(),
             x: board.width / 2 - current_shape.width / 2,
             y: 0,
+            shape: current_shape,
         };
 
         // Create an empty board
@@ -59,7 +54,6 @@ impl Tetris {
             board,
             ctx,
             current_piece,
-            shapes,
         })
     }
 
@@ -123,7 +117,8 @@ impl Tetris {
         for y in 0..self.current_piece.shape.height {
             for x in 0..self.current_piece.shape.width {
                 if self.current_piece.shape.cells[y as usize][x as usize] == 1 {
-                    self.board.grid[(self.current_piece.y + y) as usize][(self.current_piece.x + x) as usize] = 1;
+                    self.board.grid[(self.current_piece.y + y) as usize]
+                        [(self.current_piece.x + x) as usize] = 1;
                 }
             }
         }
@@ -131,18 +126,11 @@ impl Tetris {
 
     // Spawn a new block at the top of the board
     fn spawn_new_block(&mut self) {
-        use rand::thread_rng;
-
-        let mut rng = thread_rng();
-
-        if let Some(new_shape) = self.shapes.choose(&mut rng) {
-            self.current_piece = Piece {
-                shape: new_shape.clone(),
-                x: self.board.width / 2 - new_shape.width / 2,
-                y: 0,
-            }
-        } else {
-            panic!("No shapes!")
+        let new_shape = shape::get_random_shape();
+        self.current_piece = Piece {
+            x: self.board.width / 2 - new_shape.width / 2,
+            y: 0,
+            shape: new_shape,
         }
     }
 
