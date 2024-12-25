@@ -8,32 +8,55 @@ pub struct Piece {
 }
 
 impl Piece {
-    fn can_move(&self, dx: u8, dy: u8, board: &Board) -> bool {
-        let new_x = self.x + self.shape.width + dx;
-        let new_y = self.y + self.shape.height + dy;
+    pub fn can_move(&self, direction: Direction, board: &Board) -> bool {
+        let (dx, dy) = match direction {
+            Direction::Left => (-1, 0),
+            Direction::Right => (1, 0),
+            Direction::Down => (0, 1),
+        };
 
-        // Check if the new position is out of horizontal bounds
-        if new_x < 0 || new_x >= board.width {
-            return false;
+        for y in 0..self.shape.height {
+            for x in 0..self.shape.width {
+                // Only check occupied cells in the shape
+                if self.shape.cells[y as usize][x as usize] == 1 {
+                    let new_x = self.x as i8 + x as i8 + dx;
+                    let new_y = self.y as i8 + y as i8 + dy;
+
+                    // Check horizontal boundaries
+                    if new_x < 0 || new_x >= board.width as i8 {
+                        return false;
+                    }
+
+                    // Check vertical boundaries
+                    if new_y < 0 || new_y >= board.height as i8 {
+                        return false;
+                    }
+
+                    // Check if the space is occupied on the board
+                    if board.grid[new_y as usize][new_x as usize] != 0 {
+                        return false;
+                    }
+                }
+            }
         }
-
-        // Check if the new position is out of vertical bounds
-        if new_y < 0 || new_y >= board.height {
-            return false;
-        }
-
-        // Check if the space is already occupied
-        if board.grid[new_y as usize][new_x as usize] != 0 {
-            return false;
-        }
-
         true
     }
 
-    fn move_piece(&mut self, dx: u8, dy: u8, board: &Board) {
-        if self.can_move(dx, dy, board) {
-            self.x += dx;
-            self.y += dy;
+    // Move the piece in the given direction
+    pub fn move_piece(&mut self, direction: Direction, board: &Board) {
+        if self.can_move(direction, board) {
+            match direction {
+                Direction::Left => self.x -= 1,
+                Direction::Right => self.x += 1,
+                Direction::Down => self.y += 1,
+            }
         }
     }
+}
+
+#[derive(Clone, Copy)]
+pub enum Direction {
+    Left,
+    Right,
+    Down,
 }

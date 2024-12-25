@@ -13,6 +13,7 @@ use web_sys::{
     CanvasRenderingContext2d, Document, HtmlCanvasElement, KeyboardEvent, Window,
 };
 use crate::board::Board;
+use crate::piece::Direction::{Down, Left, Right};
 use crate::piece::Piece;
 
 #[wasm_bindgen]
@@ -92,6 +93,8 @@ impl Tetris {
             match event.key().as_str() {
                 "ArrowLeft" => game.move_left(),
                 "ArrowRight" => game.move_right(),
+                "ArrowUp" => game.rotate_piece(),
+                "ArrowDown" => game.move_down(),
                 _ => {}
             }
         }) as Box<dyn FnMut(_)>);
@@ -106,32 +109,14 @@ impl Tetris {
 
     // Game tick: Advance the block down one cell and redraw
     fn tick_and_redraw(&mut self) {
-        if self.can_move_shape_down() {
-            self.current_piece.y += 1; // Move down
+        if self.current_piece.can_move(Down, &self.board) {
+            self.move_down();
         } else {
-            // Add standing block to the board
             self.merge_shape_into_board();
             self.spawn_new_block();
         }
 
         self.draw();
-    }
-
-    fn can_move_shape_down(&self) -> bool {
-        let shape = &self.current_piece.shape;
-        for y in 0..shape.height {
-            for x in 0..shape.width {
-                if shape.cells[y as usize][x as usize] == 1 {
-                    let new_y = self.current_piece.y + y + 1;
-                    let new_x = self.current_piece.x + x;
-
-                    if new_y >= self.board.height || self.board.grid[new_y as usize][new_x as usize] == 1 {
-                        return false;
-                    }
-                }
-            }
-        }
-        true
     }
 
     fn merge_shape_into_board(&mut self) {
@@ -163,21 +148,28 @@ impl Tetris {
 
     // Move the falling block left
     pub fn move_left(&mut self) {
-        if self.current_piece.x > 0 && self.board.grid[self.current_piece.y as usize][(self.current_piece.x - 1) as usize] == 0 {
-            self.current_piece.x -= 1;
-            self.draw();
-        }
+        self.current_piece.move_piece(Left, &self.board);
+        self.draw();
     }
 
     // Move the falling block right
     pub fn move_right(&mut self) {
-        if self.current_piece.x + 1 < self.board.width && self.board.grid[self.current_piece.y as usize][(self.current_piece.x + 1) as usize] == 0 {
-            self.current_piece.x += 1;
-            self.draw();
-        }
+        self.current_piece.move_piece(Right, &self.board);
+        self.draw();
+    }
+
+    fn move_down(&mut self) {
+        self.current_piece.move_piece(Down, &self.board);
+        self.draw();
+    }
+
+    fn rotate_piece(&mut self) {
+        self.current_piece.shape = self.current_piece.shape.rotate();
+        self.draw();
     }
 
     // Draw the entire board, including the falling block
+    #[allow(deprecated)]
     fn draw(&self) {
         let cell_width = self.ctx.canvas().unwrap().width() as f64 / self.board.width as f64;
         let cell_height = self.ctx.canvas().unwrap().height() as f64 / self.board.height as f64;
