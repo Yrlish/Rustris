@@ -52,6 +52,64 @@ impl Piece {
             }
         }
     }
+
+    pub fn rotate_piece(&mut self, board: &Board) {
+        let original_shape = self.shape.clone();
+        let rotated_shape = self.shape.rotate();
+        self.shape = rotated_shape;
+
+        // If out of bounds, shift the piece back onto the board
+        if !self.is_within_bounds(board) {
+            // Shift to the right if it's out of the left boundary
+            while (self.x as i8) < 0 {
+                self.x += 1;
+            }
+
+            // Shift to the left if it's out of the right boundary
+            while self.x + self.shape.width > board.width {
+                if self.x > 0 {
+                    self.x -= 1;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        // After shifting, check if the piece is valid
+        if !self.can_stay(board) {
+            // Revert if the rotation cannot fit
+            self.shape = original_shape;
+        }
+    }
+
+    // Check if the piece is within the board boundaries
+    fn is_within_bounds(&self, board: &Board) -> bool {
+        self.x as i8 >= 0 && self.x + self.shape.width <= board.width
+    }
+
+    // Check if the piece can stay in its current position
+    pub fn can_stay(&self, board: &Board) -> bool {
+        for y in 0..self.shape.height {
+            for x in 0..self.shape.width {
+                if self.shape.cells[y as usize][x as usize] == 1 {
+                    let board_x = self.x as i8 + x as i8;
+                    let board_y = self.y as i8 + y as i8;
+
+                    // Check boundaries
+                    if board_x < 0 || board_x >= board.width as i8 || board_y >= board.height as i8
+                    {
+                        return false;
+                    }
+
+                    // Check overlaps
+                    if board_y >= 0 && board.grid[board_y as usize][board_x as usize] != 0 {
+                        return false;
+                    }
+                }
+            }
+        }
+        true
+    }
 }
 
 #[derive(Clone, Copy)]

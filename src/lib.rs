@@ -152,7 +152,7 @@ impl Tetris {
     }
 
     fn rotate_piece(&mut self) {
-        self.current_piece.shape = self.current_piece.shape.rotate();
+        self.current_piece.rotate_piece(&self.board);
         self.draw();
     }
 
