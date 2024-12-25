@@ -89,6 +89,7 @@ impl Tetris {
                 "ArrowRight" => game.move_right(),
                 "ArrowUp" => game.rotate_piece(),
                 "ArrowDown" => game.move_down(),
+                " " => game.hard_drop(),
                 _ => {}
             }
         }) as Box<dyn FnMut(_)>);
@@ -153,6 +154,17 @@ impl Tetris {
 
     fn rotate_piece(&mut self) {
         self.current_piece.rotate_piece(&self.board);
+        self.draw();
+    }
+
+    pub fn hard_drop(&mut self) {
+        while self.current_piece.can_move(Down, &self.board) {
+            self.current_piece.move_piece(Down, &self.board);
+        }
+
+        self.merge_shape_into_board();
+        self.spawn_new_block();
+
         self.draw();
     }
 
