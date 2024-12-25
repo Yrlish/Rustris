@@ -18,6 +18,7 @@ pub struct Tetris {
     board: Board,
     ctx: CanvasRenderingContext2d,
     current_piece: Piece,
+    game_over: bool,
 }
 
 #[wasm_bindgen]
@@ -54,6 +55,7 @@ impl Tetris {
             board,
             ctx,
             current_piece,
+            game_over: false,
         })
     }
 
@@ -104,6 +106,11 @@ impl Tetris {
 
     // Game tick: Advance the block down one cell and redraw
     fn tick_and_redraw(&mut self) {
+        if self.game_over {
+            self.display_game_over();
+            return;
+        }
+
         if self.current_piece.can_move(Down, &self.board) {
             self.move_down();
         } else {
@@ -112,6 +119,19 @@ impl Tetris {
         }
 
         self.draw();
+    }
+
+    #[allow(deprecated)]
+    fn display_game_over(&self) {
+        self.ctx.set_fill_style(&JsValue::from_str("red"));
+        self.ctx.set_font("30px Arial");
+        self.ctx
+            .fill_text(
+                "Game Over",
+                (self.ctx.canvas().unwrap().width() as f64 / 2.0) - 50.0,
+                (self.ctx.canvas().unwrap().height() as f64 / 2.0),
+            )
+            .unwrap();
     }
 
     fn merge_shape_into_board(&mut self) {
@@ -128,10 +148,16 @@ impl Tetris {
     // Spawn a new block at the top of the board
     fn spawn_new_block(&mut self) {
         let new_shape = shape::get_random_shape();
-        self.current_piece = Piece {
+        let new_piece = Piece {
             x: self.board.width / 2 - new_shape.width / 2,
             y: 0,
             shape: new_shape,
+        };
+
+        if !new_piece.can_stay(&self.board) {
+            self.game_over = true;
+        } else {
+            self.current_piece = new_piece;
         }
     }
 
