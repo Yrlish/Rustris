@@ -40,7 +40,7 @@ impl Board {
     cleared_rows
   }
 
-  pub fn draw(&self, ctx: &CanvasRenderingContext2d) {
+  pub fn draw_pieces(&self, ctx: &CanvasRenderingContext2d) {
     let cell_width = ctx.canvas().unwrap().width() as f64 / self.width as f64;
     let cell_height = ctx.canvas().unwrap().height() as f64 / self.height as f64;
 
@@ -50,6 +50,23 @@ impl Board {
 
         ctx.set_fill_style(&JsValue::from_str(&color));
         ctx.fill_rect(
+          x as f64 * cell_width,
+          y as f64 * cell_height,
+          cell_width,
+          cell_height,
+        );
+      }
+    }
+  }
+
+  pub fn draw_grid(&self, ctx: &CanvasRenderingContext2d) {
+    let cell_width = ctx.canvas().unwrap().width() as f64 / self.width as f64;
+    let cell_height = ctx.canvas().unwrap().height() as f64 / self.height as f64;
+
+    for y in self.iter_height() {
+      for x in self.iter_width() {
+        ctx.set_stroke_style(&JsValue::from_str("black"));
+        ctx.stroke_rect(
           x as f64 * cell_width,
           y as f64 * cell_height,
           cell_width,
