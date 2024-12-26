@@ -14,7 +14,7 @@ impl Board {
     Board {
       width,
       height,
-      cell_size: 30,
+      cell_size: 40,
       grid: vec![vec![Color::None; width as usize]; height as usize], // Initialize entire grid as "None"
     }
   }
