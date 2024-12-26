@@ -1,7 +1,5 @@
 use crate::board::Board;
-use crate::shape::{Color, Shape};
-use wasm_bindgen::JsValue;
-use web_sys::CanvasRenderingContext2d;
+use crate::shape::{get_random_shape, Color, Shape};
 
 #[derive(Clone)]
 pub struct Piece {
@@ -12,53 +10,13 @@ pub struct Piece {
 
 #[allow(deprecated)]
 impl Piece {
-  pub fn draw(&self, ctx: &CanvasRenderingContext2d, board: &Board) {
-    let cell_size = board.cell_size as f64;
+  pub fn random_piece() -> Piece {
+    let current_shape = get_random_shape();
 
-    let color = self.shape.color.to_rgba(1.0);
-    ctx.set_fill_style(&JsValue::from_str(&color));
-
-    for y in self.shape.iter_height() {
-      for x in self.shape.iter_width() {
-        if self.shape.cells[y][x] == 1 {
-          ctx.fill_rect(
-            (self.x + x as u8) as f64 * cell_size,
-            (self.y + y as u8) as f64 * cell_size,
-            cell_size,
-            cell_size,
-          );
-        }
-      }
-    }
-  }
-
-  pub fn draw_ghost(&self, ctx: &CanvasRenderingContext2d, board: &Board) {
-    // Create a copy of the current piece
-    let mut ghost_piece = self.clone();
-
-    // Simulate moving the piece down until it cannot move anymore
-    while ghost_piece.can_move(Direction::Down, board) {
-      ghost_piece.y += 1; // Move the ghost's y-coordinate down
-    }
-
-    // Set the fill color to a semi-transparent version
-    let color = ghost_piece.shape.color.to_rgba(0.3);
-    ctx.set_fill_style(&JsValue::from_str(&color)); // Light gray with 50% transparency
-
-    let cell_size = board.cell_size as f64;
-
-    // Draw the ghost piece
-    for y in ghost_piece.shape.iter_height() {
-      for x in ghost_piece.shape.iter_width() {
-        if ghost_piece.shape.cells[y][x] == 1 {
-          ctx.fill_rect(
-            (ghost_piece.x + x as u8) as f64 * cell_size,
-            (ghost_piece.y + y as u8) as f64 * cell_size,
-            cell_size,
-            cell_size,
-          );
-        }
-      }
+    Piece {
+      x: 5 - current_shape.width / 2,
+      y: 0,
+      shape: current_shape,
     }
   }
 

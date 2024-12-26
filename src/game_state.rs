@@ -1,7 +1,6 @@
 use crate::board::Board;
 use crate::piece::Direction::Down;
 use crate::piece::Piece;
-use crate::shape::get_random_shape;
 use std::mem;
 
 pub struct GameState {
@@ -11,17 +10,14 @@ pub struct GameState {
   pub score: u32,
   pub held_piece: Option<Piece>,
   pub hold_used: bool,
+  pub next_piece: Piece,
 }
 
 impl GameState {
   pub fn new(board_width: u8, board_height: u8) -> Self {
     let board = Board::new(board_width, board_height);
-    let current_shape = get_random_shape();
-    let current_piece = Piece {
-      x: board_width / 2 - current_shape.width / 2,
-      y: 0,
-      shape: current_shape,
-    };
+    let current_piece = Piece::random_piece();
+    let next_piece = Piece::random_piece();
 
     GameState {
       board,
@@ -30,10 +26,11 @@ impl GameState {
       score: 0,
       held_piece: None,
       hold_used: false,
+      next_piece,
     }
   }
 
-  pub fn tick(&mut self) {
+  pub fn state_tick(&mut self) {
     if self.current_piece.can_move(Down, &self.board) {
       self.current_piece.move_piece(Down, &self.board);
     } else {
@@ -67,17 +64,11 @@ impl GameState {
   }
 
   pub fn spawn_new_piece(&mut self) {
-    let new_shape = get_random_shape();
-    let new_piece = Piece {
-      x: self.board.width / 2 - new_shape.width / 2,
-      y: 0,
-      shape: new_shape,
-    };
-
-    if !new_piece.can_stay(&self.board) {
+    if !self.next_piece.can_stay(&self.board) {
       self.game_over = true;
     } else {
-      self.current_piece = new_piece;
+      self.current_piece = self.next_piece.clone();
+      self.next_piece = Piece::random_piece();
     }
   }
 

@@ -1,7 +1,5 @@
 use crate::shape::Color;
 use std::ops::Range;
-use wasm_bindgen::JsValue;
-use web_sys::CanvasRenderingContext2d;
 
 pub struct Board {
   pub width: u8,
@@ -40,40 +38,6 @@ impl Board {
     }
 
     cleared_rows
-  }
-
-  pub fn draw_pieces(&self, ctx: &CanvasRenderingContext2d) {
-    let cell_size = self.cell_size as f64;
-
-    for y in self.iter_height() {
-      for x in self.iter_width() {
-        let color = self.grid[y][x].to_rgba(1.0);
-
-        ctx.set_fill_style(&JsValue::from_str(&color));
-        ctx.fill_rect(
-          x as f64 * cell_size,
-          y as f64 * cell_size,
-          cell_size,
-          cell_size,
-        );
-      }
-    }
-  }
-
-  pub fn draw_grid(&self, ctx: &CanvasRenderingContext2d) {
-    let cell_size = self.cell_size as f64;
-    ctx.set_stroke_style(&JsValue::from_str("#555555")); // Subtle gray gridlines
-
-    for y in self.iter_height() {
-      for x in self.iter_width() {
-        ctx.stroke_rect(
-          x as f64 * cell_size,
-          y as f64 * cell_size,
-          cell_size,
-          cell_size,
-        );
-      }
-    }
   }
 
   pub fn iter_height(&self) -> Range<usize> {

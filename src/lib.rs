@@ -1,11 +1,12 @@
 mod board;
+mod game_renderer;
 mod game_state;
 mod piece;
 mod shape;
 
+use crate::game_renderer::GameRenderer;
 use crate::game_state::GameState;
 use crate::piece::Direction::{Down, Left, Right};
-use crate::piece::Piece;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::closure::Closure;
@@ -47,7 +48,7 @@ impl Tetris {
 
     let tick_game_clone = Rc::clone(&game_ref);
     let tick_closure = Closure::wrap(Box::new(move || {
-      tick_game_clone.borrow_mut().tick_and_redraw();
+      tick_game_clone.borrow_mut().game_tick();
     }) as Box<dyn FnMut()>);
 
     let window = web_sys::window().unwrap();
@@ -88,28 +89,12 @@ impl Tetris {
   }
 
   // Game tick: Advance the block down one cell and redraw
-  fn tick_and_redraw(&mut self) {
-    if self.game_state.game_over {
-      self.display_game_over();
-      return;
+  fn game_tick(&mut self) {
+    if !self.game_state.game_over {
+      self.game_state.state_tick();
     }
 
-    self.game_state.tick();
-    self.draw();
-  }
-
-  #[allow(deprecated)]
-  fn display_game_over(&self) {
-    self.ctx.set_fill_style(&JsValue::from_str("red"));
-    self.ctx.set_font("30px Arial");
-    self
-      .ctx
-      .fill_text(
-        "Game Over",
-        (self.ctx.canvas().unwrap().width() as f64 / 2.0) - 50.0,
-        self.ctx.canvas().unwrap().height() as f64 / 2.0,
-      )
-      .unwrap();
+    self.render();
   }
 
   // Move the falling block left
@@ -118,7 +103,8 @@ impl Tetris {
       .game_state
       .current_piece
       .move_piece(Left, &self.game_state.board);
-    self.draw();
+
+    self.render();
   }
 
   // Move the falling block right
@@ -127,7 +113,8 @@ impl Tetris {
       .game_state
       .current_piece
       .move_piece(Right, &self.game_state.board);
-    self.draw();
+
+    self.render();
   }
 
   fn move_down(&mut self) {
@@ -135,12 +122,13 @@ impl Tetris {
       .game_state
       .current_piece
       .move_piece(Down, &self.game_state.board);
-    self.draw();
+
+    self.render();
   }
 
   fn hold_piece(&mut self) {
     self.game_state.hold_piece();
-    self.draw();
+    self.render();
   }
 
   fn rotate_piece(&mut self) {
@@ -148,7 +136,8 @@ impl Tetris {
       .game_state
       .current_piece
       .rotate_piece(&self.game_state.board);
-    self.draw();
+
+    self.render();
   }
 
   pub fn hard_drop(&mut self) {
@@ -166,159 +155,11 @@ impl Tetris {
     self.game_state.merge_current_piece();
     self.game_state.spawn_new_piece();
 
-    self.draw();
+    self.render();
   }
 
-  // Draw the entire board, including the falling block
-  #[allow(deprecated)]
-  fn draw(&self) {
+  fn render(&self) {
     let canvas = &self.ctx;
-    let board = &self.game_state.board;
-    let cell_size = board.cell_size as f64;
-
-    // Clear entire canvas at the start of each frame
-    canvas.clear_rect(
-      0.0,
-      0.0,
-      canvas.canvas().unwrap().width() as f64,
-      canvas.canvas().unwrap().height() as f64,
-    );
-
-    // --- Draw Background ---
-    // Main play area background (dark gray)
-    canvas.set_fill_style(&JsValue::from_str("#333333")); // Darker for less strain
-    canvas.fill_rect(
-      0.0,
-      0.0,
-      board.width as f64 * cell_size,
-      canvas.canvas().unwrap().height() as f64,
-    );
-
-    // Extra area (Score & Hold) background (slightly lighter gray for distinction)
-    canvas.set_fill_style(&JsValue::from_str("#444444"));
-    canvas.fill_rect(
-      board.width as f64 * cell_size,
-      0.0,
-      canvas.canvas().unwrap().width() as f64,
-      canvas.canvas().unwrap().height() as f64,
-    );
-
-    // --- Draw the Tetromino Pieces on the Board ---
-    board.draw_pieces(canvas); // Draw fixed pieces
-    self.game_state.current_piece.draw_ghost(canvas, board); // Ghost piece
-    self.game_state.current_piece.draw(canvas, board); // Active piece
-
-    // --- Draw Gridlines ---
-    canvas.set_stroke_style(&JsValue::from_str("#555555")); // Subtle gridlines
-    for y in 0..board.height {
-      let y_pos = y as f64 * cell_size;
-      for x in 0..board.width {
-        let x_pos = x as f64 * cell_size;
-        canvas.stroke_rect(x_pos, y_pos, cell_size, cell_size);
-      }
-    }
-
-    // --- Display Score ---
-    canvas.set_fill_style(&JsValue::from_str("white")); // Bright text for visibility
-    canvas.set_font("20px 'Courier New', monospace"); // Monospace for clarity
-    canvas
-      .fill_text(
-        &format!("Score: {}", self.game_state.score),
-        (board.width + 1) as f64 * cell_size,
-        cell_size * 1.25,
-      )
-      .unwrap();
-
-    // --- Display Held Piece ---
-    self.draw_hold_piece();
-  }
-
-  fn draw_hold_box(&self, canvas: &CanvasRenderingContext2d, cell_size: f64, board_width: u8) {
-    let hold_x_offset = (board_width + 1) as f64 * cell_size;
-    let hold_y_offset = cell_size * 4.0;
-    let box_width = cell_size * 5.0;
-    let box_height = cell_size * 5.0;
-
-    // Draw "Hold" background box
-    canvas.set_fill_style_str("#222222");
-    canvas.fill_rect(hold_x_offset, hold_y_offset, box_width, box_height);
-
-    // Draw "Hold" label
-    canvas.set_fill_style_str("white");
-    canvas.set_font("20px 'Courier New', monospace");
-    canvas
-      .fill_text(
-        "Hold",
-        hold_x_offset + cell_size * 1.7,
-        hold_y_offset - 10.0,
-      )
-      .unwrap();
-  }
-
-  fn draw_piece_centered(
-    &self,
-    canvas: &CanvasRenderingContext2d,
-    piece: &Piece,
-    hold_x_offset: f64,
-    hold_y_offset: f64,
-    box_width: f64,
-    box_height: f64,
-    cell_size: f64,
-  ) {
-    let piece_width = piece.shape.width as f64 * cell_size;
-    let piece_height = piece.shape.height as f64 * cell_size;
-    let offset_x = hold_x_offset + (box_width - piece_width) / 2.0;
-    let offset_y = hold_y_offset + (box_height - piece_height) / 2.0;
-
-    let color = piece.shape.color.to_rgba(1.0);
-
-    for y in piece.shape.iter_height() {
-      for x in piece.shape.iter_width() {
-        if piece.shape.cells[y][x] == 1 {
-          // Shape's color
-          canvas.set_fill_style_str(&color);
-          canvas.fill_rect(
-            offset_x + x as f64 * cell_size,
-            offset_y + y as f64 * cell_size,
-            cell_size,
-            cell_size,
-          );
-
-          // Gridlines
-          canvas.set_stroke_style_str("#555555"); // Subtle gridlines
-          canvas.stroke_rect(
-            offset_x + x as f64 * cell_size,
-            offset_y + y as f64 * cell_size,
-            cell_size,
-            cell_size,
-          );
-        }
-      }
-    }
-  }
-
-  fn draw_hold_piece(&self) {
-    if let Some(ref held_piece) = self.game_state.held_piece {
-      let cell_size = self.game_state.board.cell_size as f64;
-      let board_width = self.game_state.board.width;
-
-      // Step 1: Draw "Hold" box and label
-      self.draw_hold_box(&self.ctx, cell_size, board_width);
-
-      // Step 2: Center and draw the held piece
-      let hold_x_offset = (board_width + 1) as f64 * cell_size;
-      let hold_y_offset = cell_size * 4.0;
-      let box_width = cell_size * 5.0;
-      let box_height = cell_size * 5.0;
-      self.draw_piece_centered(
-        &self.ctx,
-        held_piece,
-        hold_x_offset,
-        hold_y_offset,
-        box_width,
-        box_height,
-        cell_size,
-      );
-    }
+    GameRenderer::render(canvas, &self.game_state);
   }
 }
