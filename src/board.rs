@@ -6,6 +6,7 @@ use web_sys::CanvasRenderingContext2d;
 pub struct Board {
   pub width: u8,
   pub height: u8,
+  pub cell_size: u8,
   pub grid: Vec<Vec<Color>>,
 }
 
@@ -15,6 +16,7 @@ impl Board {
     Board {
       width,
       height,
+      cell_size: 30,
       grid: vec![vec![Color::None; width as usize]; height as usize], // Initialize entire grid as "None"
     }
   }
@@ -41,8 +43,7 @@ impl Board {
   }
 
   pub fn draw_pieces(&self, ctx: &CanvasRenderingContext2d) {
-    let cell_width = ctx.canvas().unwrap().width() as f64 / self.width as f64;
-    let cell_height = ctx.canvas().unwrap().height() as f64 / self.height as f64;
+    let cell_size = self.cell_size as f64;
 
     for y in self.iter_height() {
       for x in self.iter_width() {
@@ -50,27 +51,26 @@ impl Board {
 
         ctx.set_fill_style(&JsValue::from_str(&color));
         ctx.fill_rect(
-          x as f64 * cell_width,
-          y as f64 * cell_height,
-          cell_width,
-          cell_height,
+          x as f64 * cell_size,
+          y as f64 * cell_size,
+          cell_size,
+          cell_size,
         );
       }
     }
   }
 
   pub fn draw_grid(&self, ctx: &CanvasRenderingContext2d) {
-    let cell_width = ctx.canvas().unwrap().width() as f64 / self.width as f64;
-    let cell_height = ctx.canvas().unwrap().height() as f64 / self.height as f64;
+    let cell_size = self.cell_size as f64;
 
     for y in self.iter_height() {
       for x in self.iter_width() {
         ctx.set_stroke_style(&JsValue::from_str("black"));
         ctx.stroke_rect(
-          x as f64 * cell_width,
-          y as f64 * cell_height,
-          cell_width,
-          cell_height,
+          x as f64 * cell_size,
+          y as f64 * cell_size,
+          cell_size,
+          cell_size,
         );
       }
     }

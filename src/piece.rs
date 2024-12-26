@@ -13,8 +13,7 @@ pub struct Piece {
 #[allow(deprecated)]
 impl Piece {
   pub fn draw(&self, ctx: &CanvasRenderingContext2d, board: &Board) {
-    let cell_width = ctx.canvas().unwrap().width() as f64 / board.width as f64;
-    let cell_height = ctx.canvas().unwrap().height() as f64 / board.height as f64;
+    let cell_size = board.cell_size as f64;
 
     let color = self.shape.color.to_rgba(1.0);
     ctx.set_fill_style(&JsValue::from_str(&color));
@@ -23,10 +22,10 @@ impl Piece {
       for x in self.shape.iter_width() {
         if self.shape.cells[y][x] == 1 {
           ctx.fill_rect(
-            (self.x + x as u8) as f64 * cell_width,
-            (self.y + y as u8) as f64 * cell_height,
-            cell_width,
-            cell_height,
+            (self.x + x as u8) as f64 * cell_size,
+            (self.y + y as u8) as f64 * cell_size,
+            cell_size,
+            cell_size,
           );
         }
       }
@@ -46,18 +45,17 @@ impl Piece {
     let color = ghost_piece.shape.color.to_rgba(0.3);
     ctx.set_fill_style(&JsValue::from_str(&color)); // Light gray with 50% transparency
 
-    let cell_width = ctx.canvas().unwrap().width() as f64 / board.width as f64;
-    let cell_height = ctx.canvas().unwrap().height() as f64 / board.height as f64;
+    let cell_size = board.cell_size as f64;
 
     // Draw the ghost piece
     for y in ghost_piece.shape.iter_height() {
       for x in ghost_piece.shape.iter_width() {
         if ghost_piece.shape.cells[y][x] == 1 {
           ctx.fill_rect(
-            (ghost_piece.x + x as u8) as f64 * cell_width,
-            (ghost_piece.y + y as u8) as f64 * cell_height,
-            cell_width,
-            cell_height,
+            (ghost_piece.x + x as u8) as f64 * cell_size,
+            (ghost_piece.y + y as u8) as f64 * cell_size,
+            cell_size,
+            cell_size,
           );
         }
       }

@@ -35,6 +35,9 @@ impl Tetris {
 
     let game_state = GameState::new(10, 20);
 
+    canvas.set_width((game_state.board.width + 5) as u32 * game_state.board.cell_size as u32);
+    canvas.set_height((game_state.board.height + 5) as u32 * game_state.board.cell_size as u32);
+
     Ok(Tetris { ctx, game_state })
   }
 
@@ -70,6 +73,7 @@ impl Tetris {
         "ArrowUp" => game.rotate_piece(),
         "ArrowDown" => game.move_down(),
         " " => game.hard_drop(),
+        "Shift" => game.hold_piece(),
         _ => {}
       }
     }) as Box<dyn FnMut(_)>);
@@ -133,6 +137,11 @@ impl Tetris {
     self.draw();
   }
 
+  fn hold_piece(&mut self) {
+    self.game_state.hold_piece();
+    self.draw();
+  }
+
   fn rotate_piece(&mut self) {
     self
       .game_state
@@ -164,6 +173,14 @@ impl Tetris {
   fn draw(&self) {
     let canvas = &self.ctx;
     let board = &self.game_state.board;
+    let cell_size = board.cell_size as f64;
+
+    canvas.clear_rect(
+      0.0,
+      0.0,
+      canvas.canvas().unwrap().width() as f64,
+      canvas.canvas().unwrap().height() as f64,
+    );
 
     board.draw_pieces(canvas);
     self.game_state.current_piece.draw_ghost(canvas, board);
@@ -177,9 +194,37 @@ impl Tetris {
       .ctx
       .fill_text(
         &format!("Score: {}", self.game_state.score),
-        10.0,
-        25.0, // Display score in the top-left corner
+        board.width as f64 * cell_size + 10.0,
+        50.0,
       )
       .unwrap();
+
+    if let Some(ref held_piece) = self.game_state.held_piece {
+      // Offset the held piece display area
+      let hold_x = (board.width + 1) as f64 * cell_size;
+      let hold_y = cell_size * 3.0;
+
+      let color = held_piece.shape.color.to_rgba(1.0);
+      canvas.set_fill_style(&JsValue::from_str(&color));
+
+      for y in held_piece.shape.iter_height() {
+        for x in held_piece.shape.iter_width() {
+          if held_piece.shape.cells[y][x] == 1 {
+            canvas.fill_rect(
+              hold_x + x as f64 * cell_size,
+              hold_y + y as f64 * cell_size,
+              cell_size,
+              cell_size,
+            );
+          }
+        }
+      }
+
+      // Add "Hold" label
+      canvas.set_fill_style(&JsValue::from_str("black"));
+      canvas
+        .fill_text("Hold", hold_x + cell_size, hold_y - 10.0)
+        .unwrap();
+    }
   }
 }

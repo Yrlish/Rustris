@@ -2,12 +2,15 @@ use crate::board::Board;
 use crate::piece::Direction::Down;
 use crate::piece::Piece;
 use crate::shape::get_random_shape;
+use std::mem;
 
 pub struct GameState {
   pub board: Board,
   pub current_piece: Piece,
   pub game_over: bool,
   pub score: u32,
+  pub held_piece: Option<Piece>,
+  pub hold_used: bool,
 }
 
 impl GameState {
@@ -25,6 +28,8 @@ impl GameState {
       current_piece,
       game_over: false,
       score: 0,
+      held_piece: None,
+      hold_used: false,
     }
   }
 
@@ -56,7 +61,9 @@ impl GameState {
       3 => 500,
       4 => 800,
       _ => 0,
-    }
+    };
+
+    self.hold_used = false;
   }
 
   pub fn spawn_new_piece(&mut self) {
@@ -72,5 +79,24 @@ impl GameState {
     } else {
       self.current_piece = new_piece;
     }
+  }
+
+  pub fn hold_piece(&mut self) {
+    if self.hold_used {
+      return;
+    }
+
+    if let Some(mut held_piece) = self.held_piece.take() {
+      mem::swap(&mut self.current_piece, &mut held_piece);
+      self.current_piece.x = self.board.width / 2 - self.current_piece.shape.width / 2;
+      self.current_piece.y = 0;
+
+      self.held_piece = Some(held_piece);
+    } else {
+      self.held_piece = Some(self.current_piece.clone());
+      self.spawn_new_piece();
+    }
+
+    self.hold_used = true;
   }
 }
