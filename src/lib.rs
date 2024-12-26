@@ -5,6 +5,7 @@ mod shape;
 
 use crate::game_state::GameState;
 use crate::piece::Direction::{Down, Left, Right};
+use crate::piece::Piece;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::closure::Closure;
@@ -223,68 +224,101 @@ impl Tetris {
     canvas
       .fill_text(
         &format!("Score: {}", self.game_state.score),
-        board.width as f64 * cell_size + 10.0,
-        50.0,
+        (board.width + 1) as f64 * cell_size,
+        cell_size * 1.25,
       )
       .unwrap();
 
     // --- Display Held Piece ---
-    if let Some(ref held_piece) = self.game_state.held_piece {
-      let hold_x_offset = (board.width + 1) as f64 * cell_size; // Offset for "Hold" box
-      let hold_y_offset = cell_size * 4.0; // Vertical positioning
+    self.draw_hold_piece();
+  }
 
-      // --- Draw Background Box for "Hold" ---
-      let box_width = cell_size * 5.0; // Dimensions for "Hold" box
-      let box_height = cell_size * 5.0; // Slightly taller box for better spacing
-      canvas.set_fill_style(&JsValue::from_str("#222222")); // Darker for clear distinction
-      canvas.fill_rect(
-        hold_x_offset, // X start (slight padding for aesthetics)
-        hold_y_offset, // Y start
-        box_width,     // Width with padding
-        box_height,    // Height with padding
-      );
+  fn draw_hold_box(&self, canvas: &CanvasRenderingContext2d, cell_size: f64, board_width: u8) {
+    let hold_x_offset = (board_width + 1) as f64 * cell_size;
+    let hold_y_offset = cell_size * 4.0;
+    let box_width = cell_size * 5.0;
+    let box_height = cell_size * 5.0;
 
-      // --- Draw "Hold" Label ---
-      canvas.set_fill_style(&JsValue::from_str("white")); // Bright text for visibility
-      canvas.set_font("20px 'Courier New', monospace");
-      canvas
-        .fill_text(
-          "Hold",
-          hold_x_offset + cell_size * 1.7,
-          hold_y_offset - 10.0,
-        )
-        .unwrap();
+    // Draw "Hold" background box
+    canvas.set_fill_style_str("#222222");
+    canvas.fill_rect(hold_x_offset, hold_y_offset, box_width, box_height);
 
-      // --- Center and Draw the Held Piece ---
-      let piece_width = held_piece.shape.width as f64 * cell_size;
-      let piece_height = held_piece.shape.height as f64 * cell_size;
+    // Draw "Hold" label
+    canvas.set_fill_style_str("white");
+    canvas.set_font("20px 'Courier New', monospace");
+    canvas
+      .fill_text(
+        "Hold",
+        hold_x_offset + cell_size * 1.7,
+        hold_y_offset - 10.0,
+      )
+      .unwrap();
+  }
 
-      let piece_offset_x = hold_x_offset + (box_width - piece_width) / 2.0;
-      let piece_offset_y = hold_y_offset + (box_height - piece_height) / 2.0;
+  fn draw_piece_centered(
+    &self,
+    canvas: &CanvasRenderingContext2d,
+    piece: &Piece,
+    hold_x_offset: f64,
+    hold_y_offset: f64,
+    box_width: f64,
+    box_height: f64,
+    cell_size: f64,
+  ) {
+    let piece_width = piece.shape.width as f64 * cell_size;
+    let piece_height = piece.shape.height as f64 * cell_size;
+    let offset_x = hold_x_offset + (box_width - piece_width) / 2.0;
+    let offset_y = hold_y_offset + (box_height - piece_height) / 2.0;
 
-      // Draw each cell of the held Tetromino using calculated offsets
-      let color = held_piece.shape.color.to_rgba(1.0);
-      for y in held_piece.shape.iter_height() {
-        for x in held_piece.shape.iter_width() {
-          if held_piece.shape.cells[y][x] == 1 {
-            canvas.set_fill_style(&JsValue::from_str(&color));
-            canvas.fill_rect(
-              piece_offset_x + x as f64 * cell_size,
-              piece_offset_y + y as f64 * cell_size,
-              cell_size,
-              cell_size,
-            );
+    let color = piece.shape.color.to_rgba(1.0);
 
-            canvas.set_stroke_style(&JsValue::from_str("#555555")); // Subtle gridlines
-            canvas.stroke_rect(
-              piece_offset_x + x as f64 * cell_size,
-              piece_offset_y + y as f64 * cell_size,
-              cell_size,
-              cell_size,
-            );
-          }
+    for y in piece.shape.iter_height() {
+      for x in piece.shape.iter_width() {
+        if piece.shape.cells[y][x] == 1 {
+          // Shape's color
+          canvas.set_fill_style_str(&color);
+          canvas.fill_rect(
+            offset_x + x as f64 * cell_size,
+            offset_y + y as f64 * cell_size,
+            cell_size,
+            cell_size,
+          );
+
+          // Gridlines
+          canvas.set_stroke_style_str("#555555"); // Subtle gridlines
+          canvas.stroke_rect(
+            offset_x + x as f64 * cell_size,
+            offset_y + y as f64 * cell_size,
+            cell_size,
+            cell_size,
+          );
         }
       }
+    }
+  }
+
+  fn draw_hold_piece(&self) {
+    if let Some(ref held_piece) = self.game_state.held_piece {
+      let cell_size = self.game_state.board.cell_size as f64;
+      let board_width = self.game_state.board.width;
+
+      // Step 1: Draw "Hold" box and label
+      self.draw_hold_box(&self.ctx, cell_size, board_width);
+
+      // Step 2: Center and draw the held piece
+      let hold_x_offset = (board_width + 1) as f64 * cell_size;
+      let hold_y_offset = cell_size * 4.0;
+      let box_width = cell_size * 5.0;
+      let box_height = cell_size * 5.0;
+      self.draw_piece_centered(
+        &self.ctx,
+        held_piece,
+        hold_x_offset,
+        hold_y_offset,
+        box_width,
+        box_height,
+        cell_size,
+      );
     }
   }
 }
