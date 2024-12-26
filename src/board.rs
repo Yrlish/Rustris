@@ -45,18 +45,9 @@ impl Board {
 
     for y in 0..self.height {
       for x in 0..self.width {
-        let color = match self.grid[y as usize][x as usize] {
-          Color::None => "lightgray",
-          Color::Cyan => "cyan",
-          Color::Yellow => "yellow",
-          Color::Purple => "purple",
-          Color::Green => "green",
-          Color::Red => "red",
-          Color::Blue => "blue",
-          Color::Orange => "orange",
-        };
+        let color = self.grid[y as usize][x as usize].to_rgba(1.0);
 
-        ctx.set_fill_style(&JsValue::from_str(color));
+        ctx.set_fill_style(&JsValue::from_str(&color));
         ctx.fill_rect(
           x as f64 * cell_width,
           y as f64 * cell_height,

@@ -3,6 +3,7 @@ use crate::shape::{Color, Shape};
 use wasm_bindgen::JsValue;
 use web_sys::CanvasRenderingContext2d;
 
+#[derive(Clone)]
 pub struct Piece {
   pub shape: Shape,
   pub x: u8,
@@ -15,18 +16,8 @@ impl Piece {
     let cell_width = ctx.canvas().unwrap().width() as f64 / board.width as f64;
     let cell_height = ctx.canvas().unwrap().height() as f64 / board.height as f64;
 
-    let color = match self.shape.color {
-      Color::Cyan => "cyan",
-      Color::Yellow => "yellow",
-      Color::Purple => "purple",
-      Color::Green => "green",
-      Color::Red => "red",
-      Color::Blue => "blue",
-      Color::Orange => "orange",
-      Color::None => "lightgray",
-    };
-
-    ctx.set_fill_style(&JsValue::from_str(color));
+    let color = self.shape.color.to_rgba(1.0);
+    ctx.set_fill_style(&JsValue::from_str(&color));
 
     for y in 0..self.shape.height {
       for x in 0..self.shape.width {
@@ -34,6 +25,37 @@ impl Piece {
           ctx.fill_rect(
             (self.x + x) as f64 * cell_width,
             (self.y + y) as f64 * cell_height,
+            cell_width,
+            cell_height,
+          );
+        }
+      }
+    }
+  }
+
+  pub fn draw_ghost(&self, ctx: &CanvasRenderingContext2d, board: &Board) {
+    // Create a copy of the current piece
+    let mut ghost_piece = self.clone();
+
+    // Simulate moving the piece down until it cannot move anymore
+    while ghost_piece.can_move(Direction::Down, board) {
+      ghost_piece.y += 1; // Move the ghost's y-coordinate down
+    }
+
+    // Set the fill color to a semi-transparent version
+    let color = ghost_piece.shape.color.to_rgba(0.3);
+    ctx.set_fill_style(&JsValue::from_str(&color)); // Light gray with 50% transparency
+
+    let cell_width = ctx.canvas().unwrap().width() as f64 / board.width as f64;
+    let cell_height = ctx.canvas().unwrap().height() as f64 / board.height as f64;
+
+    // Draw the ghost piece
+    for y in 0..ghost_piece.shape.height {
+      for x in 0..ghost_piece.shape.width {
+        if ghost_piece.shape.cells[y as usize][x as usize] == 1 {
+          ctx.fill_rect(
+            (ghost_piece.x + x) as f64 * cell_width,
+            (ghost_piece.y + y) as f64 * cell_height,
             cell_width,
             cell_height,
           );

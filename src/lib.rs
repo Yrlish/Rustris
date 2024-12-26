@@ -212,6 +212,7 @@ impl Tetris {
   fn draw(&self) {
     let canvas = &self.ctx;
     self.board.draw(canvas);
+    self.current_piece.draw_ghost(canvas, &self.board);
     self.current_piece.draw(canvas, &self.board);
 
     let cell_width = self.ctx.canvas().unwrap().width() as f64 / self.board.width as f64;
