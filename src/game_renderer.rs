@@ -26,6 +26,9 @@ impl GameRenderer {
     // Held Piece
     Self::render_hold(canvas, &game_state.held_piece, cell_width, board_width);
 
+    // Next Piece
+    Self::render_next(canvas, &game_state.next_piece, cell_width, board_width);
+
     // Game Over screen
     if game_state.game_over {
       Self::render_game_over(canvas);
@@ -154,7 +157,7 @@ impl GameRenderer {
     board_width: u16,
   ) {
     let box_x = board_width + cell_size as u16;
-    let box_y = cell_size as u16 * 4;
+    let box_y = cell_size as u16 * (4 + 5 + 2);
     let box_width = cell_size as u16 * 5;
     let box_height = cell_size as u16 * 5;
 
@@ -204,8 +207,59 @@ impl GameRenderer {
     }
   }
 
-  fn render_next() {
-    // todo
+  fn render_next(
+    canvas: &CanvasRenderingContext2d,
+    next_piece: &Piece,
+    cell_size: u8,
+    board_width: u16,
+  ) {
+    let box_x = board_width + cell_size as u16;
+    let box_y = cell_size as u16 * (4);
+    let box_width = cell_size as u16 * 5;
+    let box_height = cell_size as u16 * 5;
+
+    canvas.set_fill_style_str("#222222");
+    canvas.fill_rect(
+      box_x as f64,
+      box_y as f64,
+      box_width as f64,
+      box_height as f64,
+    );
+
+    canvas.set_fill_style_str("white");
+    canvas.set_font("20px 'Courier New', monospace");
+    canvas
+      .fill_text(
+        "Next",
+        box_x as f64 + (cell_size as f64 * 1.7),
+        box_y as f64 - 10.0,
+      )
+      .unwrap();
+
+    let piece_width = cell_size as u16 * next_piece.shape.width as u16;
+    let piece_height = cell_size as u16 * next_piece.shape.height as u16;
+    let piece_x = box_x + (box_width - piece_width) / 2;
+    let piece_y = box_y + (box_height - piece_height) / 2;
+    let color = next_piece.shape.color.to_rgba(1.0);
+
+    for y in next_piece.shape.iter_height() {
+      for x in next_piece.shape.iter_width() {
+        if next_piece.shape.cells[y][x] == 1 {
+          canvas.set_fill_style_str(&color);
+          let cell_x = piece_x + (x as u16 * cell_size as u16);
+          let cell_y = piece_y + (y as u16 * cell_size as u16);
+
+          canvas.fill_rect(
+            cell_x as f64,
+            cell_y as f64,
+            cell_size as f64,
+            cell_size as f64,
+          );
+
+          Self::render_gridlines(canvas, cell_x, cell_y, 1, 1, cell_size);
+        }
+      }
+    }
   }
 
   fn render_game_over(canvas: &CanvasRenderingContext2d) {
