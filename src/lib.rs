@@ -19,6 +19,7 @@ pub struct Tetris {
   ctx: CanvasRenderingContext2d,
   current_piece: Piece,
   game_over: bool,
+  score: u32,
 }
 
 #[wasm_bindgen]
@@ -52,6 +53,7 @@ impl Tetris {
       ctx,
       current_piece,
       game_over: false,
+      score: 0,
     })
   }
 
@@ -142,6 +144,18 @@ impl Tetris {
         }
       }
     }
+
+    // Clear full lines and update the score
+    let lines_cleared = self.board.clear_full_lines();
+
+    // Score points based on the number of cleared lines
+    self.score += match lines_cleared {
+      1 => 100, // 1 line cleared: 100 points
+      2 => 300, // 2 lines cleared: 300 points
+      3 => 500, // 3 lines cleared: 500 points
+      4 => 800, // 4 lines cleared (Tetris): 800 points
+      _ => 0,   // No points for clearing 0 lines
+    };
   }
 
   // Spawn a new block at the top of the board
@@ -215,5 +229,17 @@ impl Tetris {
         );
       }
     }
+
+    // Display the current score
+    self.ctx.set_fill_style(&JsValue::from_str("black"));
+    self.ctx.set_font("20px Arial");
+    self
+      .ctx
+      .fill_text(
+        &format!("Score: {}", self.score),
+        10.0,
+        25.0, // Display score in the top-left corner
+      )
+      .unwrap();
   }
 }

@@ -18,6 +18,27 @@ impl Board {
     }
   }
 
+  pub fn clear_full_lines(&mut self) -> u8 {
+    let mut cleared_rows = 0;
+
+    // Retain only rows that are not full and count the cleared rows
+    self.grid.retain(|row| {
+      if row.iter().all(|&cell| cell != Color::None) {
+        cleared_rows += 1;
+        false // Remove this row (it's full)
+      } else {
+        true // Keep this row
+      }
+    });
+
+    // Add empty rows at the top to maintain the board's size
+    for _ in 0..cleared_rows {
+      self.grid.insert(0, vec![Color::None; self.width as usize]);
+    }
+
+    cleared_rows
+  }
+
   pub fn draw(&self, ctx: &CanvasRenderingContext2d) {
     let cell_width = ctx.canvas().unwrap().width() as f64 / self.width as f64;
     let cell_height = ctx.canvas().unwrap().height() as f64 / self.height as f64;
