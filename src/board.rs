@@ -1,4 +1,5 @@
 use crate::shape::Color;
+use std::ops::Range;
 use wasm_bindgen::JsValue;
 use web_sys::CanvasRenderingContext2d;
 
@@ -43,9 +44,9 @@ impl Board {
     let cell_width = ctx.canvas().unwrap().width() as f64 / self.width as f64;
     let cell_height = ctx.canvas().unwrap().height() as f64 / self.height as f64;
 
-    for y in 0..self.height {
-      for x in 0..self.width {
-        let color = self.grid[y as usize][x as usize].to_rgba(1.0);
+    for y in self.iter_height() {
+      for x in self.iter_width() {
+        let color = self.grid[y][x].to_rgba(1.0);
 
         ctx.set_fill_style(&JsValue::from_str(&color));
         ctx.fill_rect(
@@ -56,5 +57,13 @@ impl Board {
         );
       }
     }
+  }
+
+  pub fn iter_height(&self) -> Range<usize> {
+    0..self.height as usize
+  }
+
+  pub fn iter_width(&self) -> Range<usize> {
+    0..self.width as usize
   }
 }

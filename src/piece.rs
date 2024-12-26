@@ -19,12 +19,12 @@ impl Piece {
     let color = self.shape.color.to_rgba(1.0);
     ctx.set_fill_style(&JsValue::from_str(&color));
 
-    for y in 0..self.shape.height {
-      for x in 0..self.shape.width {
-        if self.shape.cells[y as usize][x as usize] == 1 {
+    for y in self.shape.iter_height() {
+      for x in self.shape.iter_width() {
+        if self.shape.cells[y][x] == 1 {
           ctx.fill_rect(
-            (self.x + x) as f64 * cell_width,
-            (self.y + y) as f64 * cell_height,
+            (self.x + x as u8) as f64 * cell_width,
+            (self.y + y as u8) as f64 * cell_height,
             cell_width,
             cell_height,
           );
@@ -50,12 +50,12 @@ impl Piece {
     let cell_height = ctx.canvas().unwrap().height() as f64 / board.height as f64;
 
     // Draw the ghost piece
-    for y in 0..ghost_piece.shape.height {
-      for x in 0..ghost_piece.shape.width {
-        if ghost_piece.shape.cells[y as usize][x as usize] == 1 {
+    for y in ghost_piece.shape.iter_height() {
+      for x in ghost_piece.shape.iter_width() {
+        if ghost_piece.shape.cells[y][x] == 1 {
           ctx.fill_rect(
-            (ghost_piece.x + x) as f64 * cell_width,
-            (ghost_piece.y + y) as f64 * cell_height,
+            (ghost_piece.x + x as u8) as f64 * cell_width,
+            (ghost_piece.y + y as u8) as f64 * cell_height,
             cell_width,
             cell_height,
           );
@@ -71,10 +71,10 @@ impl Piece {
       Direction::Down => (0, 1),
     };
 
-    for y in 0..self.shape.height {
-      for x in 0..self.shape.width {
-        // Only check occupied cells in the shape
-        if self.shape.cells[y as usize][x as usize] == 1 {
+    for y in self.shape.iter_height() {
+      for x in self.shape.iter_width() {
+        if self.shape.cells[y][x] == 1 {
+          // Only check occupied cells in the shape
           let new_x = self.x as i8 + x as i8 + dx;
           let new_y = self.y as i8 + y as i8 + dy;
 
@@ -145,9 +145,9 @@ impl Piece {
 
   // Check if the piece can stay in its current position
   pub fn can_stay(&self, board: &Board) -> bool {
-    for y in 0..self.shape.height {
-      for x in 0..self.shape.width {
-        if self.shape.cells[y as usize][x as usize] == 1 {
+    for y in self.shape.iter_height() {
+      for x in self.shape.iter_width() {
+        if self.shape.cells[y][x] == 1 {
           let board_x = self.x as i8 + x as i8;
           let board_y = self.y as i8 + y as i8;
 

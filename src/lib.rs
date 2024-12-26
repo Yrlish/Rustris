@@ -218,8 +218,8 @@ impl Tetris {
     let cell_width = self.ctx.canvas().unwrap().width() as f64 / self.board.width as f64;
     let cell_height = self.ctx.canvas().unwrap().height() as f64 / self.board.height as f64;
 
-    for y in 0..self.board.height {
-      for x in 0..self.board.width {
+    for y in self.board.iter_height() {
+      for x in self.board.iter_width() {
         // Draw grid borders for clarity
         self.ctx.set_stroke_style(&JsValue::from_str("black"));
         self.ctx.stroke_rect(

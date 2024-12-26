@@ -1,5 +1,6 @@
 use rand::prelude::SliceRandom;
 use rand::thread_rng;
+use std::ops::Range;
 
 #[derive(Clone)]
 pub struct Shape {
@@ -12,10 +13,12 @@ pub struct Shape {
 impl Shape {
   // Rotate the shape clockwise
   pub fn rotate(&self) -> Shape {
-    let new_cells = (0..self.width)
+    let new_cells = self
+      .iter_width()
       .map(|x| {
-        (0..self.height)
-          .map(|y| self.cells[(self.height - 1 - y) as usize][x as usize])
+        self
+          .iter_height()
+          .map(|y| self.cells[(self.height - 1) as usize - y][x])
           .collect()
       })
       .collect();
@@ -26,6 +29,14 @@ impl Shape {
       height: self.width,
       color: self.color,
     }
+  }
+
+  pub fn iter_height(&self) -> Range<usize> {
+    0..self.height as usize
+  }
+
+  pub fn iter_width(&self) -> Range<usize> {
+    0..self.width as usize
   }
 }
 
