@@ -121,12 +121,12 @@ impl Color {
     match self {
       Color::Cyan => format!("rgba(0, 255, 255, {})", opacity), // Cyan
       Color::Yellow => format!("rgba(255, 255, 0, {})", opacity), // Yellow
-      Color::Purple => format!("rgba(128, 0, 128, {})", opacity), // Purple
+      Color::Purple => format!("rgba(127, 0, 255, {})", opacity), // Purple
       Color::Green => format!("rgba(0, 255, 0, {})", opacity),  // Green
-      Color::Red => format!("rgba(255, 0, 0, {})", opacity),    // Red
-      Color::Blue => format!("rgba(0, 0, 255, {})", opacity),   // Blue
-      Color::Orange => format!("rgba(255, 165, 0, {})", opacity), // Orange
-      Color::None => format!("rgba(200, 200, 200, {})", opacity), // Default for empty
+      Color::Red => format!("rgba(255, 69, 0, {})", opacity),   // Red (slightly darker)
+      Color::Blue => format!("rgba(30, 144, 255, {})", opacity), // Dodger Blue
+      Color::Orange => format!("rgba(255, 140, 0, {})", opacity), // Dark Orange
+      Color::None => format!("rgba(50, 50, 50, {})", opacity),  // Empty cell (light gray)
     }
   }
 }

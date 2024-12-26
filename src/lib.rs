@@ -35,8 +35,8 @@ impl Tetris {
 
     let game_state = GameState::new(10, 20);
 
-    canvas.set_width((game_state.board.width + 5) as u32 * game_state.board.cell_size as u32);
-    canvas.set_height((game_state.board.height + 5) as u32 * game_state.board.cell_size as u32);
+    canvas.set_width((game_state.board.width + 7) as u32 * game_state.board.cell_size as u32);
+    canvas.set_height((game_state.board.height) as u32 * game_state.board.cell_size as u32);
 
     Ok(Tetris { ctx, game_state })
   }
@@ -175,6 +175,7 @@ impl Tetris {
     let board = &self.game_state.board;
     let cell_size = board.cell_size as f64;
 
+    // Clear entire canvas at the start of each frame
     canvas.clear_rect(
       0.0,
       0.0,
@@ -182,16 +183,44 @@ impl Tetris {
       canvas.canvas().unwrap().height() as f64,
     );
 
-    board.draw_pieces(canvas);
-    self.game_state.current_piece.draw_ghost(canvas, board);
-    self.game_state.current_piece.draw(canvas, board);
-    board.draw_grid(canvas);
+    // --- Draw Background ---
+    // Main play area background (dark gray)
+    canvas.set_fill_style(&JsValue::from_str("#333333")); // Darker for less strain
+    canvas.fill_rect(
+      0.0,
+      0.0,
+      board.width as f64 * cell_size,
+      canvas.canvas().unwrap().height() as f64,
+    );
 
-    // Display the current score
-    self.ctx.set_fill_style(&JsValue::from_str("black"));
-    self.ctx.set_font("20px Arial");
-    self
-      .ctx
+    // Extra area (Score & Hold) background (slightly lighter gray for distinction)
+    canvas.set_fill_style(&JsValue::from_str("#444444"));
+    canvas.fill_rect(
+      board.width as f64 * cell_size,
+      0.0,
+      canvas.canvas().unwrap().width() as f64,
+      canvas.canvas().unwrap().height() as f64,
+    );
+
+    // --- Draw the Tetromino Pieces on the Board ---
+    board.draw_pieces(canvas); // Draw fixed pieces
+    self.game_state.current_piece.draw_ghost(canvas, board); // Ghost piece
+    self.game_state.current_piece.draw(canvas, board); // Active piece
+
+    // --- Draw Gridlines ---
+    canvas.set_stroke_style(&JsValue::from_str("#555555")); // Subtle gridlines
+    for y in 0..board.height {
+      let y_pos = y as f64 * cell_size;
+      for x in 0..board.width {
+        let x_pos = x as f64 * cell_size;
+        canvas.stroke_rect(x_pos, y_pos, cell_size, cell_size);
+      }
+    }
+
+    // --- Display Score ---
+    canvas.set_fill_style(&JsValue::from_str("white")); // Bright text for visibility
+    canvas.set_font("20px 'Courier New', monospace"); // Monospace for clarity
+    canvas
       .fill_text(
         &format!("Score: {}", self.game_state.score),
         board.width as f64 * cell_size + 10.0,
@@ -199,32 +228,63 @@ impl Tetris {
       )
       .unwrap();
 
+    // --- Display Held Piece ---
     if let Some(ref held_piece) = self.game_state.held_piece {
-      // Offset the held piece display area
-      let hold_x = (board.width + 1) as f64 * cell_size;
-      let hold_y = cell_size * 3.0;
+      let hold_x_offset = (board.width + 1) as f64 * cell_size; // Offset for "Hold" box
+      let hold_y_offset = cell_size * 4.0; // Vertical positioning
 
+      // --- Draw Background Box for "Hold" ---
+      let box_width = cell_size * 5.0; // Dimensions for "Hold" box
+      let box_height = cell_size * 5.0; // Slightly taller box for better spacing
+      canvas.set_fill_style(&JsValue::from_str("#222222")); // Darker for clear distinction
+      canvas.fill_rect(
+        hold_x_offset, // X start (slight padding for aesthetics)
+        hold_y_offset, // Y start
+        box_width,     // Width with padding
+        box_height,    // Height with padding
+      );
+
+      // --- Draw "Hold" Label ---
+      canvas.set_fill_style(&JsValue::from_str("white")); // Bright text for visibility
+      canvas.set_font("20px 'Courier New', monospace");
+      canvas
+        .fill_text(
+          "Hold",
+          hold_x_offset + cell_size * 1.7,
+          hold_y_offset - 10.0,
+        )
+        .unwrap();
+
+      // --- Center and Draw the Held Piece ---
+      let piece_width = held_piece.shape.width as f64 * cell_size;
+      let piece_height = held_piece.shape.height as f64 * cell_size;
+
+      let piece_offset_x = hold_x_offset + (box_width - piece_width) / 2.0;
+      let piece_offset_y = hold_y_offset + (box_height - piece_height) / 2.0;
+
+      // Draw each cell of the held Tetromino using calculated offsets
       let color = held_piece.shape.color.to_rgba(1.0);
-      canvas.set_fill_style(&JsValue::from_str(&color));
-
       for y in held_piece.shape.iter_height() {
         for x in held_piece.shape.iter_width() {
           if held_piece.shape.cells[y][x] == 1 {
+            canvas.set_fill_style(&JsValue::from_str(&color));
             canvas.fill_rect(
-              hold_x + x as f64 * cell_size,
-              hold_y + y as f64 * cell_size,
+              piece_offset_x + x as f64 * cell_size,
+              piece_offset_y + y as f64 * cell_size,
+              cell_size,
+              cell_size,
+            );
+
+            canvas.set_stroke_style(&JsValue::from_str("#555555")); // Subtle gridlines
+            canvas.stroke_rect(
+              piece_offset_x + x as f64 * cell_size,
+              piece_offset_y + y as f64 * cell_size,
               cell_size,
               cell_size,
             );
           }
         }
       }
-
-      // Add "Hold" label
-      canvas.set_fill_style(&JsValue::from_str("black"));
-      canvas
-        .fill_text("Hold", hold_x + cell_size, hold_y - 10.0)
-        .unwrap();
     }
   }
 }

@@ -62,10 +62,10 @@ impl Board {
 
   pub fn draw_grid(&self, ctx: &CanvasRenderingContext2d) {
     let cell_size = self.cell_size as f64;
+    ctx.set_stroke_style(&JsValue::from_str("#555555")); // Subtle gray gridlines
 
     for y in self.iter_height() {
       for x in self.iter_width() {
-        ctx.set_stroke_style(&JsValue::from_str("black"));
         ctx.stroke_rect(
           x as f64 * cell_size,
           y as f64 * cell_size,
