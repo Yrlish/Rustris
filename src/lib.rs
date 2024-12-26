@@ -37,11 +37,7 @@ impl Tetris {
       .ok_or("Failed to get canvas context")?
       .dyn_into::<CanvasRenderingContext2d>()?;
 
-    let board = Board {
-      width: 10,
-      height: 20,
-      grid: vec![vec![0; 10]; 20],
-    };
+    let board = Board::new(10, 20);
 
     let current_shape = shape::get_random_shape();
     let current_piece = Piece {
@@ -139,8 +135,10 @@ impl Tetris {
     for y in 0..self.current_piece.shape.height {
       for x in 0..self.current_piece.shape.width {
         if self.current_piece.shape.cells[y as usize][x as usize] == 1 {
-          self.board.grid[(self.current_piece.y + y) as usize]
-            [(self.current_piece.x + x) as usize] = 1;
+          let board_y = (self.current_piece.y + y) as usize;
+          let board_x = (self.current_piece.x + x) as usize;
+
+          self.board.grid[board_y][board_x] = self.current_piece.shape.color;
         }
       }
     }
@@ -198,36 +196,16 @@ impl Tetris {
   // Draw the entire board, including the falling block
   #[allow(deprecated)]
   fn draw(&self) {
+    let canvas = &self.ctx;
+    self.board.draw(canvas);
+    self.current_piece.draw(canvas, &self.board);
+
     let cell_width = self.ctx.canvas().unwrap().width() as f64 / self.board.width as f64;
     let cell_height = self.ctx.canvas().unwrap().height() as f64 / self.board.height as f64;
 
-    // Clear the canvas
-    self.ctx.set_fill_style(&JsValue::from_str("white"));
-    self.ctx.fill_rect(
-      0.0,
-      0.0,
-      self.ctx.canvas().unwrap().width() as f64,
-      self.ctx.canvas().unwrap().height() as f64,
-    );
-
-    // Render the board and active blocks
     for y in 0..self.board.height {
       for x in 0..self.board.width {
-        if self.board.grid[y as usize][x as usize] == 1 {
-          // Draw filled block
-          self.ctx.set_fill_style(&JsValue::from_str("blue"));
-        } else {
-          // Grid-style empty cells
-          self.ctx.set_fill_style(&JsValue::from_str("lightgray"));
-        }
-        self.ctx.fill_rect(
-          x as f64 * cell_width,
-          y as f64 * cell_height,
-          cell_width,
-          cell_height,
-        );
-
-        // Draw border for clarity
+        // Draw grid borders for clarity
         self.ctx.set_stroke_style(&JsValue::from_str("black"));
         self.ctx.stroke_rect(
           x as f64 * cell_width,
@@ -235,20 +213,6 @@ impl Tetris {
           cell_width,
           cell_height,
         );
-      }
-    }
-
-    for y in 0..self.current_piece.shape.height {
-      for x in 0..self.current_piece.shape.width {
-        if self.current_piece.shape.cells[y as usize][x as usize] == 1 {
-          self.ctx.set_fill_style(&JsValue::from_str("green"));
-          self.ctx.fill_rect(
-            (self.current_piece.x + x) as f64 * cell_width,
-            (self.current_piece.y + y) as f64 * cell_height,
-            cell_width,
-            cell_height,
-          );
-        }
       }
     }
   }

@@ -1,5 +1,7 @@
 use crate::board::Board;
-use crate::shape::Shape;
+use crate::shape::{Color, Shape};
+use wasm_bindgen::JsValue;
+use web_sys::CanvasRenderingContext2d;
 
 pub struct Piece {
   pub shape: Shape,
@@ -7,7 +9,39 @@ pub struct Piece {
   pub y: u8,
 }
 
+#[allow(deprecated)]
 impl Piece {
+  pub fn draw(&self, ctx: &CanvasRenderingContext2d, board: &Board) {
+    let cell_width = ctx.canvas().unwrap().width() as f64 / board.width as f64;
+    let cell_height = ctx.canvas().unwrap().height() as f64 / board.height as f64;
+
+    let color = match self.shape.color {
+      Color::Cyan => "cyan",
+      Color::Yellow => "yellow",
+      Color::Purple => "purple",
+      Color::Green => "green",
+      Color::Red => "red",
+      Color::Blue => "blue",
+      Color::Orange => "orange",
+      Color::None => "lightgray",
+    };
+
+    ctx.set_fill_style(&JsValue::from_str(color));
+
+    for y in 0..self.shape.height {
+      for x in 0..self.shape.width {
+        if self.shape.cells[y as usize][x as usize] == 1 {
+          ctx.fill_rect(
+            (self.x + x) as f64 * cell_width,
+            (self.y + y) as f64 * cell_height,
+            cell_width,
+            cell_height,
+          );
+        }
+      }
+    }
+  }
+
   pub fn can_move(&self, direction: Direction, board: &Board) -> bool {
     let (dx, dy) = match direction {
       Direction::Left => (-1, 0),
@@ -33,7 +67,7 @@ impl Piece {
           }
 
           // Check if the space is occupied on the board
-          if board.grid[new_y as usize][new_x as usize] != 0 {
+          if board.grid[new_y as usize][new_x as usize] != Color::None {
             return false;
           }
         }
@@ -101,7 +135,7 @@ impl Piece {
           }
 
           // Check overlaps
-          if board_y >= 0 && board.grid[board_y as usize][board_x as usize] != 0 {
+          if board_y >= 0 && board.grid[board_y as usize][board_x as usize] != Color::None {
             return false;
           }
         }
